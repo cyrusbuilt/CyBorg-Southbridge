@@ -14,6 +14,8 @@
 #endif
 
 #include "Arduino.h"
+#include "AtxController.h"
+#include "AtxTask.h"
 #include "fabgl.h"
 
 fabgl::BitmappedDisplayController*  DisplayController;
@@ -27,8 +29,11 @@ fabgl::SerialPortTerminalConnector  SerialPortTerminalConnector;
 #define INPUT_QUEUE_SIZE 2048     // 2048 good to pass vttest
 #define KB_READER_STACK_SIZE 3000 // more stack is required for the UI (used inside Terminal.onVirtualKey)
 
+AtxController atxController;
+SystemState lastState = SystemState::OFF;
+
 void disableWatchdogs() {
-	Serial.println("DEBUG: Disable watchdogs");
+	Serial.println(F("INIT: boot0 - Disable watchdogs. "));
 	disableCore0WDT();
   	delay(100); // experienced crashes without this delay!
   	disableCore1WDT();
@@ -36,7 +41,7 @@ void disableWatchdogs() {
 
 void bootScreen() {
 	if (ConfDialogApp::getBootInfo() == BOOTINFO_ENABLED) {
-    	Terminal.write("* *  CyBorg - Integrated Terminal                       * *\r\n");
+    	Terminal.write("* *  CyBorg VGA BIOS - Integrated Terminal              * *\r\n");
     	Terminal.write("* *  2022 by Cyrus Brunner - cyrusbuilt@gmail.com       * *\r\n");
 		Terminal.write("* *  Based on AnsiTerminal using FabGL                  * *\r\n");
 		Terminal.write("* *  2019-2022 by Fabrizio Di Vittorio - www.fabgl.com  * *\r\n\n");
@@ -116,16 +121,18 @@ void configureKeyboardEvents() {
   	};
 }
 
-void setup() {
+void bootStage0() {
 	Serial.begin(115200);
 	delay(500);
-
 	disableWatchdogs();
+	initAtxController();
+}
 
-  	Terminal.keyboardReaderTaskStackSize = KB_READER_STACK_SIZE;
+void bootStage1() {
+	Terminal.keyboardReaderTaskStackSize = KB_READER_STACK_SIZE;
 	Terminal.inputQueueSize = INPUT_QUEUE_SIZE;
 	
-	preferences.begin("CyrUX", false);
+	preferences.begin("CyBorg", false);
 
   	ConfDialogApp::checkVersion();
 
@@ -146,7 +153,41 @@ void setup() {
 	configureKeyboardEvents();
 }
 
+void bootStage2() {
+	// Wait about 3 seconds to allow the display to wake up and show the
+	// VGA BIOS info before booting the main system.
+	delay(3000);
+
+	// Turn on the I/O expander and send RUN signal to Northbridge.
+	AtxController::singleton->signalInit();
+}
+
+void setup() {
+	bootStage0();
+}
+
 void loop() {
+	SystemState currentState = AtxController::singleton->getState();
+	if (currentState != lastState) {
+		// Power state changed.
+		switch (currentState) {
+			case SystemState::ON:
+				// We have full power. Moving on to full boot...
+				bootStage1();
+				bootStage2();
+				break;
+			case SystemState::OFF:
+				// We lost power. Restart.
+				ESP.restart();
+				break;
+			case SystemState::INIT:
+			default:
+				break;
+		}
+		
+		lastState = currentState;
+	}
+
 	// the job is done using UART interrupts
   	vTaskDelete(NULL);
 }
