@@ -18,19 +18,23 @@
 #include "AtxTask.h"
 #include "fabgl.h"
 
+// Forward declarations
+void handleAtxPowerOn();
+void handleAtxPowerOff();
+void handleAtxPowerInit();
+
+// Global vars
 fabgl::BitmappedDisplayController*  DisplayController;
 fabgl::PS2Controller                PS2Controller;
 fabgl::Terminal                     Terminal;
 fabgl::SerialPort                   SerialPort;
 fabgl::SerialPortTerminalConnector  SerialPortTerminalConnector;
+AtxController atxController;
 
 #include "confdialog.h"
 
 #define INPUT_QUEUE_SIZE 2048     // 2048 good to pass vttest
 #define KB_READER_STACK_SIZE 3000 // more stack is required for the UI (used inside Terminal.onVirtualKey)
-
-AtxController atxController;
-SystemState lastState = SystemState::OFF;
 
 void disableWatchdogs() {
 	Serial.println(F("INIT: boot0 - Disable watchdogs. "));
@@ -122,11 +126,15 @@ void configureKeyboardEvents() {
   	};
 }
 
-void bootStage0() {
-	Serial.begin(115200);
-	delay(500);
-	disableWatchdogs();
-	initAtxController();
+void bootStage2() {
+	Serial.println(F("INIT: boot2 - Northbridge init."));
+
+	// Wait about 3 seconds to allow the display to wake up and show the
+	// VGA BIOS info before booting the main system.
+	delay(3000);
+
+	// Turn on the I/O expander and send RUN signal to Northbridge.
+	AtxController::singleton->signalInit();
 }
 
 void bootStage1() {
@@ -155,15 +163,32 @@ void bootStage1() {
 	configureKeyboardEvents();
 }
 
-void bootStage2() {
-	Serial.println(F("INIT: boot2 - Northbridge init."));
+void handleAtxPowerOn() {
+	// We have full power. Moving on to full boot...
+	Serial.println(F("INIT: boot0 - ATX PSU initialized."));
+	bootStage1();
+	bootStage2();
+}
 
-	// Wait about 3 seconds to allow the display to wake up and show the
-	// VGA BIOS info before booting the main system.
-	delay(3000);
+void handleAtxPowerOff() {
+	// We lost power. Restart.
+	Serial.println(F("INFO: ATX PSU shutdown detected."));
+	ESP.restart();
+}
 
-	// Turn on the I/O expander and send RUN signal to Northbridge.
-	AtxController::singleton->signalInit();
+void handleAtxPowerInit() {
+	Serial.println(F("INIT: boot0 - ATX PSU initializing..."));
+}
+
+void bootStage0() {
+	Serial.begin(115200);
+	delay(500);
+	Serial.println(F("INIT: boot0 - Southbridge init."));
+	disableWatchdogs();
+	AtxController::singleton->onPowerInit(handleAtxPowerInit);
+	AtxController::singleton->onPowerOn(handleAtxPowerOn);
+	AtxController::singleton->onPowerOff(handleAtxPowerOff);
+	initAtxController();
 }
 
 void setup() {
@@ -171,31 +196,6 @@ void setup() {
 }
 
 void loop() {
-	// TODO We can probably move this logic inside AtxController::loop() and fire handler callbacks
-	// for ON/OFF instead.
-	SystemState currentState = AtxController::singleton->getState();
-	if (currentState != lastState) {
-		// Power state changed.
-		switch (currentState) {
-			case SystemState::ON:
-				// We have full power. Moving on to full boot...
-				bootStage1();
-				bootStage2();
-				break;
-			case SystemState::OFF:
-				// We lost power. Restart.
-				ESP.restart();
-				break;
-			case SystemState::INIT:
-				Serial.println(F("INIT: boot0 - PSU init."));
-				break;
-			default:
-				break;
-		}
-		
-		lastState = currentState;
-	}
-
 	// the terminal job is done using UART interrupts
   	vTaskDelete(NULL);
 }

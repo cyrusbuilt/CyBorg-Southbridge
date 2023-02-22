@@ -4,7 +4,7 @@
 #include <Arduino.h>
 
 #define PIN_PS_ON 14
-#define PIN_IO_EX_ON 35
+#define PIN_IO_EX_ON 16
 #define PIN_RUN 12
 #define PIN_PWR_OK 36
 #define PIN_PWR_BTN 39
@@ -27,6 +27,9 @@ public:
 	void loop();
 	void signalInit();
 	SystemState getState();
+	void onPowerOn(void (*systemPowerOn)());
+	void onPowerOff(void (*systemPowerOff)());
+	void onPowerInit(void (*systemPowerInit)());
 
 	static AtxController *singleton;
 	TaskHandle_t atxTask;
@@ -38,6 +41,9 @@ private:
 	int _lastPwrOkState;
 	unsigned long _lastDebounceTime;
 	volatile SystemState _currentState;
+	void (*systemPowerOn)();
+	void (*systemPowerOff)();
+	void (*systemPowerInit)();
 };
 
 #endif

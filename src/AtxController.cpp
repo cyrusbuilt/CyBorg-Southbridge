@@ -7,8 +7,8 @@ AtxController::AtxController() {
 		AtxController::singleton = this;
 	}
 	_currentState = SystemState::OFF;
-	_buttonState = 0;
-	_lastButtonState = 0;
+	_buttonState = HIGH;
+	_lastButtonState = HIGH;
 	_lastDebounceTime = 0;
 	_mutex = nullptr;
 }
@@ -40,8 +40,8 @@ void AtxController::end() {
 	// TODO should we go ahead drive PIN_PS_ON high and drop ATX power?
 	_mutex = nullptr;
 	_currentState = SystemState::OFF;
-	_buttonState = 0;
-	_lastButtonState = 0;
+	_buttonState = HIGH;
+	_lastButtonState = HIGH;
 	_lastDebounceTime = 0;
 	// TODO should we delete the atxTask too?
 	// As long as it is running, loop() will continue to get called. Luckily, we guard against that, but still.
@@ -88,17 +88,49 @@ void AtxController::loop() {
 			// We have full ATX power.
 			_currentState = SystemState::ON;
 		}
-		else if (pwrOkState == LOW && _currentState != SystemState::OFF) {
+		else if (pwrOkState == LOW && _currentState == SystemState::ON) {
 			_currentState = SystemState::OFF;
 		}
 	}
 
 	_lastPwrOkState = pwrOkState;
+	switch (_currentState) {
+		case SystemState::ON:
+			if (systemPowerOn != NULL) {
+				systemPowerOn();
+			}
+			break;
+		case SystemState::OFF:
+			if (systemPowerOff != NULL) {
+				systemPowerOff();
+			}
+			break;
+		case SystemState::INIT:
+			if (systemPowerInit != NULL) {
+				systemPowerInit();
+			}
+			break;
+		default:
+			break;
+	}
+
 	xSemaphoreGive(_mutex);
 }
 
 SystemState AtxController::getState() {
 	return _currentState;
+}
+
+void AtxController::onPowerOn(void (*systemPowerOn)()) {
+	this->systemPowerOn = systemPowerOn;
+}
+
+void AtxController::onPowerOff(void (*systemPowerOff)()) {
+	this->systemPowerOff = systemPowerOff;
+}
+
+void AtxController::onPowerInit(void (*systemPowerInit)()) {
+	this->systemPowerInit = systemPowerInit;
 }
 
 void AtxController::signalInit() {
