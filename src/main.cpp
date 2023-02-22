@@ -2,7 +2,7 @@
  * @file main.cpp
  * @author Cyrus Brunner (cyrusbuilt at gmail dot com)
  * @brief 
- * @version 1.0
+ * @version 1.1
  * @date 2022-10-21
  * 
  * @copyright Copyright (c) 2022
@@ -115,6 +115,7 @@ void configureKeyboardEvents() {
           			preferences.putInt(PREF_BOOTINFO, BOOTINFO_TEMPDISABLED);
 				}
 
+				// TODO this will effectively reboot the whole machine. Do we want to do this?
         		ESP.restart();
       		}
 		}
@@ -129,6 +130,7 @@ void bootStage0() {
 }
 
 void bootStage1() {
+	Serial.println(F("INIT: boot1 - Terminal init."));
 	Terminal.keyboardReaderTaskStackSize = KB_READER_STACK_SIZE;
 	Terminal.inputQueueSize = INPUT_QUEUE_SIZE;
 	
@@ -154,6 +156,8 @@ void bootStage1() {
 }
 
 void bootStage2() {
+	Serial.println(F("INIT: boot2 - Northbridge init."));
+
 	// Wait about 3 seconds to allow the display to wake up and show the
 	// VGA BIOS info before booting the main system.
 	delay(3000);
@@ -167,6 +171,8 @@ void setup() {
 }
 
 void loop() {
+	// TODO We can probably move this logic inside AtxController::loop() and fire handler callbacks
+	// for ON/OFF instead.
 	SystemState currentState = AtxController::singleton->getState();
 	if (currentState != lastState) {
 		// Power state changed.
@@ -181,6 +187,8 @@ void loop() {
 				ESP.restart();
 				break;
 			case SystemState::INIT:
+				Serial.println(F("INIT: boot0 - PSU init."));
+				break;
 			default:
 				break;
 		}
@@ -188,6 +196,6 @@ void loop() {
 		lastState = currentState;
 	}
 
-	// the job is done using UART interrupts
+	// the terminal job is done using UART interrupts
   	vTaskDelete(NULL);
 }

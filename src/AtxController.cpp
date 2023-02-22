@@ -6,9 +6,19 @@ AtxController::AtxController() {
 	if (AtxController::singleton == nullptr) {
 		AtxController::singleton = this;
 	}
+	_currentState = SystemState::OFF;
 	_buttonState = 0;
 	_lastButtonState = 0;
 	_lastDebounceTime = 0;
+	_mutex = nullptr;
+}
+
+AtxController::~AtxController() {
+	if (_mutex) {
+		end();
+	}
+
+	// TODO Since we're a singleton, we should probably dispose our own instance here?
 }
 
 void AtxController::begin() {
@@ -20,9 +30,28 @@ void AtxController::begin() {
 	digitalWrite(PIN_RUN, LOW);
 	pinMode(PIN_PWR_OK, INPUT);
 	pinMode(PIN_PWR_BTN, INPUT_PULLUP);
+	_mutex = xSemaphoreCreateMutex();
+}
+
+void AtxController::end() {
+	vSemaphoreDelete(_mutex);
+	digitalWrite(PIN_IO_EX_ON, LOW);
+	digitalWrite(PIN_RUN, LOW);
+	// TODO should we go ahead drive PIN_PS_ON high and drop ATX power?
+	_mutex = nullptr;
+	_currentState = SystemState::OFF;
+	_buttonState = 0;
+	_lastButtonState = 0;
+	_lastDebounceTime = 0;
+	// TODO should we delete the atxTask too?
+	// As long as it is running, loop() will continue to get called. Luckily, we guard against that, but still.
 }
 
 void AtxController::loop() {
+	if (!_mutex) {
+		return;
+	}
+
 	xSemaphoreTake(_mutex, portMAX_DELAY);
 	
 	int powerBtnRaw = digitalRead(PIN_PWR_BTN);

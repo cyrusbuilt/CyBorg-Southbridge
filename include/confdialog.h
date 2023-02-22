@@ -9,7 +9,7 @@
 #include "restartdialog.h"
 
 #define TERMVERSION_MAJ 1
-#define TERMVERSION_MIN 0
+#define TERMVERSION_MIN 1
 
 #define PIN_RX 34
 #define PIN_TX 2
