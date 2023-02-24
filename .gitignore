@@ -3,7 +3,6 @@
 
 # We don't need these for now
 test/
-lib/
 
 # Archives
 *.zip

@@ -9,7 +9,7 @@
 #define PIN_PWR_OK 36
 #define PIN_PWR_BTN 39
 
-#define DEBOUNCE_DELAY 100
+//#define DEBOUNCE_DELAY 100
 #define PWR_OFF_DELAY 10000
 
 enum class SystemState : uint8_t {
@@ -36,10 +36,10 @@ public:
 
 private:
 	volatile SemaphoreHandle_t _mutex;
-	int _buttonState;
-	int _lastButtonState;
+	// int _buttonState;
+	// int _lastButtonState;
 	int _lastPwrOkState;
-	unsigned long _lastDebounceTime;
+	// unsigned long _lastDebounceTime;
 	volatile SystemState _currentState;
 	void (*systemPowerOn)();
 	void (*systemPowerOff)();
