@@ -41,6 +41,7 @@ private:
 	int _lastPwrOkState;
 	// unsigned long _lastDebounceTime;
 	volatile SystemState _currentState;
+	volatile SystemState _lastState;
 	void (*systemPowerOn)();
 	void (*systemPowerOff)();
 	void (*systemPowerInit)();

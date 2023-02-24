@@ -8,6 +8,8 @@ AtxController::AtxController() {
 		AtxController::singleton = this;
 	}
 	_currentState = SystemState::OFF;
+	_lastState = SystemState::OFF;
+	_lastPwrOkState = LOW;
 	// _buttonState = HIGH;
 	// _lastButtonState = HIGH;
 	// _lastDebounceTime = 0;
@@ -63,6 +65,8 @@ void AtxController::end() {
 	// TODO should we go ahead drive PIN_PS_ON high and drop ATX power?
 	_mutex = nullptr;
 	_currentState = SystemState::OFF;
+	_lastState = SystemState::OFF;
+	_lastPwrOkState = LOW;
 	// _buttonState = HIGH;
 	// _lastButtonState = HIGH;
 	// _lastDebounceTime = 0;
@@ -103,8 +107,12 @@ void AtxController::loop() {
 	// }
 
 	// _lastButtonState = powerBtnRaw;
-	
+
 	int pwrOkState = digitalRead(PIN_PWR_OK);
+	if (digitalRead(PIN_PS_ON) == LOW && pwrOkState == LOW) {
+		_currentState == SystemState::INIT;
+	}
+
 	if (pwrOkState != _lastPwrOkState) {
 		// We changed power states.
 		if (pwrOkState == HIGH && _currentState != SystemState::ON) {
@@ -117,26 +125,29 @@ void AtxController::loop() {
 	}
 
 	_lastPwrOkState = pwrOkState;
-	switch (_currentState) {
-		case SystemState::ON:
-			if (systemPowerOn != NULL) {
-				systemPowerOn();
-			}
-			break;
-		case SystemState::OFF:
-			if (systemPowerOff != NULL) {
-				systemPowerOff();
-			}
-			break;
-		case SystemState::INIT:
-			if (systemPowerInit != NULL) {
-				systemPowerInit();
-			}
-			break;
-		default:
-			break;
+	if (_currentState != _lastState) {
+		switch (_currentState) {
+			case SystemState::ON:
+				if (systemPowerOn != NULL) {
+					systemPowerOn();
+				}
+				break;
+			case SystemState::OFF:
+				if (systemPowerOff != NULL) {
+					systemPowerOff();
+				}
+				break;
+			case SystemState::INIT:
+				if (systemPowerInit != NULL) {
+					systemPowerInit();
+				}
+				break;
+			default:
+				break;
+		}
 	}
 
+	_lastState = _currentState;
 	xSemaphoreGive(_mutex);
 	ButtonEvent.loop();
 }
