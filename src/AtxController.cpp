@@ -10,9 +10,7 @@ AtxController::AtxController() {
 	_currentState = SystemState::OFF;
 	_lastState = SystemState::OFF;
 	_lastPwrOkState = LOW;
-	// _buttonState = HIGH;
-	// _lastButtonState = HIGH;
-	// _lastDebounceTime = 0;
+	_buttonWasDown = false;
 	_mutex = nullptr;
 }
 
@@ -26,15 +24,18 @@ AtxController::~AtxController() {
 
 void onButtonDown(ButtonInformation *sender) {
 	Serial.println(F("DEBUG: Button down!"));
-	// TODO we probably don't need this one.
+	AtxController::singleton->setButtonWasDown(true);
 }
 
 void onButtonUp(ButtonInformation *sender) {
 	Serial.println(F("DEBUG: Button up!"));
-	if (AtxController::singleton->getState() == SystemState::OFF) {
+	if (AtxController::singleton->getState() == SystemState::OFF
+		&& AtxController::singleton->buttonWasDown()) {
 		Serial.println(F("DEBUG: Powering up!"));
 		digitalWrite(PIN_PS_ON, LOW);
 	}
+
+	AtxController::singleton->setButtonWasDown(false);
 }
 
 void onButtonHold(ButtonInformation *sender) {
@@ -53,7 +54,6 @@ void AtxController::begin() {
 	pinMode(PIN_RUN, OUTPUT);
 	digitalWrite(PIN_RUN, LOW);
 	pinMode(PIN_PWR_OK, INPUT);
-	//pinMode(PIN_PWR_BTN, INPUT_PULLUP);
 	ButtonEvent.addButton(PIN_PWR_BTN, onButtonDown, onButtonUp, onButtonHold, PWR_OFF_DELAY, NULL, 0);
 	_mutex = xSemaphoreCreateMutex();
 }
@@ -67,9 +67,7 @@ void AtxController::end() {
 	_currentState = SystemState::OFF;
 	_lastState = SystemState::OFF;
 	_lastPwrOkState = LOW;
-	// _buttonState = HIGH;
-	// _lastButtonState = HIGH;
-	// _lastDebounceTime = 0;
+	_buttonWasDown = false;
 	// TODO should we delete the atxTask too?
 	// As long as it is running, loop() will continue to get called. Luckily, we guard against that, but still.
 }
@@ -80,33 +78,6 @@ void AtxController::loop() {
 	}
 
 	xSemaphoreTake(_mutex, portMAX_DELAY);
-	
-	// int powerBtnRaw = digitalRead(PIN_PWR_BTN);
-	// if (powerBtnRaw != _lastButtonState) {
-	// 	_lastDebounceTime = millis();
-	// }
-
-	// unsigned long checkDiff = millis() - _lastDebounceTime;
-	// if (checkDiff > DEBOUNCE_DELAY) {
-	// 	_buttonState = powerBtnRaw;
-	// 	if (_buttonState == HIGH) {
-	// 		// Button was pressed and then released.
-	// 		if (_currentState != SystemState::ON) {
-	// 			// Turn power on.
-	// 			digitalWrite(PIN_PS_ON, LOW);
-	// 			_currentState = SystemState::INIT;
-	// 		}
-	// 	}
-	// 	else {
-	// 		// Button is being held
-	// 		if (checkDiff > PWR_OFF_DELAY && _currentState != SystemState::OFF) {
-	// 			// Drop power.
-	// 			digitalWrite(PIN_PS_ON, HIGH);
-	// 		}
-	// 	}
-	// }
-
-	// _lastButtonState = powerBtnRaw;
 
 	int pwrOkState = digitalRead(PIN_PWR_OK);
 	if (digitalRead(PIN_PS_ON) == LOW && pwrOkState == LOW) {
@@ -166,6 +137,14 @@ void AtxController::onPowerOff(void (*systemPowerOff)()) {
 
 void AtxController::onPowerInit(void (*systemPowerInit)()) {
 	this->systemPowerInit = systemPowerInit;
+}
+
+bool AtxController::buttonWasDown() {
+	return _buttonWasDown;
+}
+
+void AtxController::setButtonWasDown(bool wasDown) {
+	_buttonWasDown = wasDown;
 }
 
 void AtxController::signalInit() {

@@ -30,18 +30,18 @@ public:
 	void onPowerOn(void (*systemPowerOn)());
 	void onPowerOff(void (*systemPowerOff)());
 	void onPowerInit(void (*systemPowerInit)());
+	bool buttonWasDown();
+	void setButtonWasDown(bool wasDown);
 
 	static AtxController *singleton;
 	TaskHandle_t atxTask;
 
 private:
-	volatile SemaphoreHandle_t _mutex;
-	// int _buttonState;
-	// int _lastButtonState;
 	int _lastPwrOkState;
-	// unsigned long _lastDebounceTime;
+	volatile SemaphoreHandle_t _mutex;
 	volatile SystemState _currentState;
 	volatile SystemState _lastState;
+	volatile bool _buttonWasDown;
 	void (*systemPowerOn)();
 	void (*systemPowerOff)();
 	void (*systemPowerInit)();
