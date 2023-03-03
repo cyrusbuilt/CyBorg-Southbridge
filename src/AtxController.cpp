@@ -78,7 +78,8 @@ void AtxController::loop() {
 	}
 
 	xSemaphoreTake(_mutex, portMAX_DELAY);
-
+	ButtonEvent.loop();
+	
 	int pwrOkState = digitalRead(PIN_PWR_OK);
 	if (digitalRead(PIN_PS_ON) == LOW && pwrOkState == LOW) {
 		_currentState == SystemState::INIT;
@@ -120,7 +121,6 @@ void AtxController::loop() {
 
 	_lastState = _currentState;
 	xSemaphoreGive(_mutex);
-	ButtonEvent.loop();
 }
 
 SystemState AtxController::getState() {
