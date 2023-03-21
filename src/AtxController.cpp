@@ -47,6 +47,8 @@ void onButtonHold(ButtonInformation *sender) {
 }
 
 void AtxController::begin() {
+	pinMode(PIN_LED_STANDBY, OUTPUT);
+	digitalWrite(PIN_LED_STANDBY, HIGH);
 	pinMode(PIN_PS_ON, OUTPUT);
 	digitalWrite(PIN_PS_ON, HIGH);
 	pinMode(PIN_IO_EX_ON, OUTPUT);
@@ -100,11 +102,13 @@ void AtxController::loop() {
 	if (_currentState != _lastState) {
 		switch (_currentState) {
 			case SystemState::ON:
+				digitalWrite(PIN_LED_STANDBY, LOW);
 				if (systemPowerOn != NULL) {
 					systemPowerOn();
 				}
 				break;
 			case SystemState::OFF:
+				digitalWrite(PIN_LED_STANDBY, HIGH);
 				if (systemPowerOff != NULL) {
 					systemPowerOff();
 				}

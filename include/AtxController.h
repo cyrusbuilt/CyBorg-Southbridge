@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 
+#define PIN_LED_STANDBY 13
 #define PIN_PS_ON 14
 #define PIN_IO_EX_ON 16
 #define PIN_RUN 12
