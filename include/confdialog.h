@@ -9,7 +9,7 @@
 #include "restartdialog.h"
 
 #define TERMVERSION_MAJ 1
-#define TERMVERSION_MIN 1
+#define TERMVERSION_MIN 2
 
 #define PIN_RX 34
 #define PIN_TX 2
@@ -182,7 +182,7 @@ struct ConfDialogApp : public uiApp {
 
     // little help
     // TODO this first line needs shifted to the right a bit
-    new uiStaticLabel(frame, "CyBorg Terminal - (c) 2022 by Cyrus Brunner", Point(65, y), true, STYLE_LABELHELP2);
+    new uiStaticLabel(frame, "CyBorg Terminal - (c) 2022 by Cyrus Brunner", Point(85, y), true, STYLE_LABELHELP2);
     new uiStaticLabel(frame, "Press TAB key to move between fields", Point(100, y + 12), true, STYLE_LABELHELP);
     new uiStaticLabel(frame, "Outside this dialog press CTRL-ALT-F12 to reset settings", Point(52, y + 24), true, STYLE_LABELHELP);
 

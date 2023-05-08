@@ -84,7 +84,7 @@ void AtxController::loop() {
 	
 	int pwrOkState = digitalRead(PIN_PWR_OK);
 	if (digitalRead(PIN_PS_ON) == LOW && pwrOkState == LOW) {
-		_currentState == SystemState::INIT;
+		_currentState = SystemState::INIT;
 	}
 
 	if (pwrOkState != _lastPwrOkState) {

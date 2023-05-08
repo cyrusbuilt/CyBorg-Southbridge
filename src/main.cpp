@@ -2,7 +2,7 @@
  * @file main.cpp
  * @author Cyrus Brunner (cyrusbuilt at gmail dot com)
  * @brief 
- * @version 1.1
+ * @version 1.2
  * @date 2022-10-21
  * 
  * @copyright Copyright (c) 2022
@@ -110,6 +110,13 @@ void configureKeyboardEvents() {
 
   	// onUserSequence is triggered whenever a User Sequence has been received (ESC + '_#' ... '$'), where '...' is sent here
   	Terminal.onUserSequence = [&](char const * seq) {
+		Serial.print(F("DEBUG: User sequence: "));
+		Serial.println(seq);
+		// TODO implement custom sequences for the following:
+		// 1) Soft-off
+		// 2) Reset MCP23017
+		// 3) Full system reset?
+
     	// 'R': change resolution (for example: ESC + "_#R512x384x64$")
     	for (int i = 0; i < RESOLUTIONS_COUNT; ++i) {
       		if (strcmp(RESOLUTIONS_CMDSTR[i], seq) == 0) {
@@ -182,8 +189,8 @@ void handleAtxPowerInit() {
 
 void bootStage0() {
 	Serial.begin(115200);
-	delay(500);
 	Serial.println(F("INIT: boot0 - Southbridge init."));
+	delay(500);
 	disableWatchdogs();
 	AtxController::singleton->onPowerInit(handleAtxPowerInit);
 	AtxController::singleton->onPowerOn(handleAtxPowerOn);
