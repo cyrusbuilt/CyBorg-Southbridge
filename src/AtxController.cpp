@@ -23,12 +23,12 @@ AtxController::~AtxController() {
 }
 
 void onButtonDown(ButtonInformation *sender) {
-	Serial.println(F("DEBUG: Button down!"));
+	//Serial.println(F("DEBUG: Button down!"));
 	AtxController::singleton->setButtonWasDown(true);
 }
 
 void onButtonUp(ButtonInformation *sender) {
-	Serial.println(F("DEBUG: Button up!"));
+	//Serial.println(F("DEBUG: Button up!"));
 	if (AtxController::singleton->getState() == SystemState::OFF
 		&& AtxController::singleton->buttonWasDown()) {
 		Serial.println(F("DEBUG: Powering up!"));

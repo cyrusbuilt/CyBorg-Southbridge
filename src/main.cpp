@@ -138,7 +138,7 @@ void bootStage2() {
 
 	// Wait about 3 seconds to allow the display to wake up and show the
 	// VGA BIOS info before booting the main system.
-	delay(3000);
+	delay(5000);
 
 	// Turn on the I/O expander and send RUN signal to Northbridge.
 	AtxController::singleton->signalInit();
@@ -189,6 +189,10 @@ void handleAtxPowerInit() {
 
 void bootStage0() {
 	Serial.begin(115200);
+	Serial.print(F("CyBorg SB Firmware v"));
+	Serial.print(TERMVERSION_MAJ);
+	Serial.print(F("."));
+	Serial.println(TERMVERSION_MIN);
 	Serial.println(F("INIT: boot0 - Southbridge init."));
 	delay(500);
 	disableWatchdogs();
