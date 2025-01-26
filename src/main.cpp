@@ -2,7 +2,7 @@
  * @file main.cpp
  * @author Cyrus Brunner (cyrusbuilt at gmail dot com)
  * @brief 
- * @version 1.2
+ * @version 1.3
  * @date 2022-10-21
  * 
  * @copyright Copyright (c) 2022
@@ -134,7 +134,7 @@ void configureKeyboardEvents() {
 }
 
 void bootStage2() {
-	Serial.println(F("INIT: boot2 - Northbridge init."));
+	Serial.println(F("INIT: boot2 - ViCREM init."));
 
 	// Wait about 3 seconds to allow the display to wake up and show the
 	// VGA BIOS info before booting the main system.
