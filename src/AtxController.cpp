@@ -47,22 +47,28 @@ void onButtonHold(ButtonInformation *sender) {
 }
 
 void AtxController::begin() {
+	// Init "standby" LED.
 	pinMode(PIN_LED_STANDBY, OUTPUT);
 	digitalWrite(PIN_LED_STANDBY, HIGH);
+
+	// Init power-on trigger (which is active low, so we init high).
 	pinMode(PIN_PS_ON, OUTPUT);
 	digitalWrite(PIN_PS_ON, HIGH);
-	pinMode(PIN_IO_EX_ON, OUTPUT);
-	digitalWrite(PIN_IO_EX_ON, LOW);
+
+	// Init "run" signal (which tells ViCREM it can boot)
 	pinMode(PIN_RUN, OUTPUT);
 	digitalWrite(PIN_RUN, LOW);
+
+	// Init power-ok sensing.
 	pinMode(PIN_PWR_OK, INPUT);
+
+	// Init power button.
 	ButtonEvent.addButton(PIN_PWR_BTN, onButtonDown, onButtonUp, onButtonHold, PWR_OFF_DELAY, NULL, 0);
 	_mutex = xSemaphoreCreateMutex();
 }
 
 void AtxController::end() {
 	vSemaphoreDelete(_mutex);
-	digitalWrite(PIN_IO_EX_ON, LOW);
 	digitalWrite(PIN_RUN, LOW);
 	// TODO should we go ahead drive PIN_PS_ON high and drop ATX power?
 	_mutex = nullptr;
@@ -152,6 +158,5 @@ void AtxController::setButtonWasDown(bool wasDown) {
 }
 
 void AtxController::signalInit() {
-	digitalWrite(PIN_IO_EX_ON, HIGH);
 	digitalWrite(PIN_RUN, HIGH);
 }

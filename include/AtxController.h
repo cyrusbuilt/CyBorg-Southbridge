@@ -5,12 +5,10 @@
 
 #define PIN_LED_STANDBY 13
 #define PIN_PS_ON 14
-#define PIN_IO_EX_ON 16
 #define PIN_RUN 12
 #define PIN_PWR_OK 36
 #define PIN_PWR_BTN 39
 
-//#define DEBOUNCE_DELAY 100
 #define PWR_OFF_DELAY 10000
 
 enum class SystemState : uint8_t {
